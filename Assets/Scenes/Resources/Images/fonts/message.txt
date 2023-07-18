@@ -1,0 +1,79 @@
+How to connect to WPA2/PEAP/MSCHAPv2 enterprise wifi networks that don't use a CA_Certificate, like Eduroam
+
+My university uses WPA2 Enterprise encryption for students to login their wireless. In NetworkManager I have keyed in everything that they needed
+
+Security : WPA & WPA2 Enterprise
+Authentication : Protected EAP (PEAP)
+CA certificate is not needed
+PEAP version : Automatic
+Inner authentication : MSCHAPv2
+Username and Password are correct.
+Everytime I try to connect, I get a window asking me to input my password over and over again
+
+---
+
+There is a bug report here: https://bugs.launchpad.net/ubuntu/+source/network-manager/+bug/1104476
+
+A workaround is to remove the line
+
+system-ca-cert=true
+from the configuration file found in /etc/NetworkManager/system-connections/
+
+---
+
+Here's a work around.
+
+Open a terminal (Alt + F2) and run the following commands:
+
+cd /etc/NetworkManager/system-connections
+sudo touch SSID #SSID is the name of the profile, e.g. eduroam
+sudo nano SSID
+Then edit the "SSID" profile as following:
+
+[ipv6]
+method=auto
+
+[connection]
+id=SSID #(e.g.EDUroam)
+uuid=9e123fbc-0123-46e3-97b5-f3214e123456 #unique uuid will be created upon creation of this profile
+type=802-11-wireless
+
+[802-11-wireless-security]
+key-mgmt=wpa-eap
+auth-alg=open
+
+[802-11-wireless
+ssid=SSID
+mode=infrastructure
+mac-address=0A:12:3C:DA:C1:A5
+security=802-11-wireless-security
+
+[802-1x]
+eap=peap;
+identity=studentid123123
+phase2-auth=mschapv2
+password=mypass123123
+
+[ipv4]
+method=auto
+Modify the above file and it should work.
+
+---
+
+I had the same problem at work I followed the instructions and changed the system-ca-cert=false but I also had to go in and change the wireless driver settings once I made the changes it connected right up. check out the link where I got the info below
+
+http://wireless.kernel.org/en/users/Documentation/wpa_supplicant
+
+-o<driver> and -O<ctrl>
+
+/usr/share/dbus-1/system-services/fi.epitest.hostap.WPASupplicant.service
+
+[D-BUS Service]
+Name=fi.epitest.hostap.WPASupplicant
+Exec=/sbin/wpa_supplicant -u -f /var/log/wpa_supplicant.log
+User=root
+
+[D-BUS Service]
+Name=fi.epitest.hostap.WPASupplicant
+Exec=/sbin/wpa_supplicant -u -onl80211 -O/var/run/wpa_supplicant
+User=root
